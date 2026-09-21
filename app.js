@@ -1,36 +1,50 @@
-/* ================= 1. 실시간 시계 로직 ================= */
-function updateClock() {
-  const now = new Date();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const h = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const s = String(now.getSeconds()).padStart(2, '0');
-  
-  const clockEl = document.getElementById('header-clock');
-  if (clockEl) {
-    clockEl.innerHTML = `${m}월 <span class="big-day">${d}일</span><br>${h}:${min}:${s}`;
-  }
-}
-setInterval(updateClock, 1000);
-updateClock();
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-/* ================= 2. 데이터 관리 ================= */
-const defaultCategories = ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'];
-let appData = {
-  expenses: JSON.parse(localStorage.getItem('myExp')) || [],
-  incomes: JSON.parse(localStorage.getItem('myInc')) || [],
-  categories: JSON.parse(localStorage.getItem('myCat')) || defaultCategories
+/* ================= 1. 파이어베이스 및 데이터 초기화 ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCG86jGSCHmadOn4_LdymWtT37XMEA4EFE",
+  authDomain: "dnjfrmq.firebaseapp.com",
+  projectId: "dnjfrmq",
+  storageBucket: "dnjfrmq.firebasestorage.app",
+  messagingSenderId: "942049894622",
+  appId: "1:942049894622:web:8dc62411fac925e5b1224f"
 };
 
-function saveData() {
-  localStorage.setItem('myExp', JSON.stringify(appData.expenses));
-  localStorage.setItem('myInc', JSON.stringify(appData.incomes));
-  localStorage.setItem('myCat', JSON.stringify(appData.categories));
-  updateHome();
-}
-function formatMoney(num) { return Number(num).toLocaleString() + ' 원'; }
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const docRef = doc(db, "household", "myHome"); // 데이터베이스 저장소 이름
 
+const defaultCategories = ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'];
+let appData = { expenses: [], incomes: [], categories: defaultCategories, widgetOrder: [] };
+let isFirstLoad = true;
+
+// 파이어베이스 실시간 연동 (데이터가 바뀌면 화면 즉시 갱신)
+onSnapshot(docRef, (docSnap) => {
+  if (docSnap.exists()) {
+    appData = docSnap.data();
+  } else {
+    // 최초 실행 시 기본 데이터베이스 생성
+    setDoc(docRef, appData);
+  }
+
+  // 처음 불러올 때만 저장된 위젯 순서를 적용 (드래그 중 튕김 방지)
+  if (isFirstLoad) {
+    applyWidgetOrder();
+    isFirstLoad = false;
+  }
+
+  updateHome();
+  renderExpenses();
+  renderIncomes();
+});
+
+function saveData() {
+  setDoc(docRef, appData); // 로컬 스토리지가 아닌 파이어베이스에 저장
+}
+
+function formatMoney(num) { return Number(num).toLocaleString() + ' 원'; }
+function getRawNumber(val) { return Number(val.replace(/,/g, '')); }
 function attachCommaEvent(inputId) {
   const input = document.getElementById(inputId);
   if(!input) return;
@@ -39,13 +53,28 @@ function attachCommaEvent(inputId) {
     e.target.value = val ? Number(val).toLocaleString('ko-KR') : '';
   });
 }
-function getRawNumber(val) { return Number(val.replace(/,/g, '')); }
 
 
-/* ================= 3. 홈 위젯 (드래그 앤 드롭 & 계산) ================= */
+/* ================= 2. 위젯 순서 및 홈 화면 갱신 ================= */
+function applyWidgetOrder() {
+  if (appData.widgetOrder && appData.widgetOrder.length > 0) {
+    const container = document.getElementById('tab-home');
+    appData.widgetOrder.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) container.appendChild(el);
+    });
+  }
+}
+
+// 위젯 드래그 앤 드롭 및 순서 파이어베이스 저장
 new Sortable(document.getElementById('tab-home'), {
   handle: '.drag-handle',
-  animation: 150
+  animation: 150,
+  onEnd: function () {
+    const order = Array.from(document.getElementById('tab-home').querySelectorAll('.widget')).map(el => el.id);
+    appData.widgetOrder = order;
+    saveData();
+  }
 });
 
 function updateHome() {
@@ -53,9 +82,7 @@ function updateHome() {
   document.getElementById('date-subtitle').textContent = `지출 예정 (오늘 ${currentDay}일 기준)`;
 
   let totalIncome = 0; let paidAmount = 0; let unpaidAmount = 0; let expectedAmount = 0;
-
   appData.incomes.forEach(i => totalIncome += Number(i.amount));
-  
   appData.expenses.forEach(e => {
     const amt = Number(e.amount);
     if(e.isPaid) {
@@ -74,6 +101,24 @@ function updateHome() {
   document.getElementById('home-expected-amount').textContent = formatMoney(expectedAmount);
   document.getElementById('home-balance').textContent = formatMoney(remaining);
 }
+
+
+/* ================= 3. 실시간 시계 ================= */
+function updateClock() {
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const h = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  
+  const clockEl = document.getElementById('header-clock');
+  if (clockEl) {
+    clockEl.innerHTML = `${m}월 <span class="big-day">${d}일</span><br>${h}:${min}:${s}`;
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
 
 
 /* ================= 4. 화면 전환 및 모달 ================= */
@@ -120,12 +165,11 @@ document.getElementById('modal-cancel').addEventListener('click', window.closeMo
 mConfirm.onclick = () => { if(confirmAction) confirmAction(); };
 
 
-/* ================= 5. 지출 로직 (정렬 및 취소 경고창) ================= */
+/* ================= 5. 지출 로직 ================= */
 const expenseList = document.getElementById('expense-list');
 function renderExpenses() {
   expenseList.innerHTML = '';
   
-  // 정렬 로직: 1순위 미납(false), 2순위 납부일(오름차순)
   const sortedExpenses = [...appData.expenses].sort((a, b) => {
     if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
     return Number(a.date) - Number(b.date);
@@ -156,18 +200,16 @@ window.togglePaid = function(id) {
   if(!exp) return;
 
   if (exp.isPaid) {
-    // 이미 완료된 걸 풀려고 할 때 경고창 띄우기
     openModal('납부 취소', `<p style="text-align:center;">정말 <b>[${exp.name}]</b> 항목의<br>납부 완료 상태를 취소하시겠습니까?</p>`, () => {
       exp.isPaid = false;
       exp.paidAt = null;
-      saveData(); renderExpenses(); window.closeModal();
+      saveData(); window.closeModal();
     });
   } else {
-    // 납부 대기 -> 완료 처리 시 현재 시간 기록
     exp.isPaid = true;
     const now = new Date();
     exp.paidAt = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    saveData(); renderExpenses(); 
+    saveData(); 
   }
 };
 
@@ -187,7 +229,7 @@ window.editExpense = function(id) {
     exp.name = document.getElementById('e-name').value;
     exp.date = document.getElementById('e-date').value;
     exp.amount = getRawNumber(document.getElementById('e-amt').value);
-    saveData(); renderExpenses(); window.closeModal();
+    saveData(); window.closeModal();
   });
   attachCommaEvent('e-amt'); 
 };
@@ -195,7 +237,7 @@ window.editExpense = function(id) {
 window.deleteExpense = function(id) {
   if(confirm('정말 삭제할까요?')) {
     appData.expenses = appData.expenses.filter(e => e.id !== id);
-    saveData(); renderExpenses(); window.closeModal();
+    saveData(); window.closeModal();
   }
 };
 
@@ -215,7 +257,7 @@ document.getElementById('btn-add-expense').addEventListener('click', () => {
       name: document.getElementById('e-name').value, date: document.getElementById('e-date').value,
       amount: rawAmt, isPaid: false, paidAt: null
     });
-    saveData(); renderExpenses(); window.closeModal();
+    saveData(); window.closeModal();
   });
   attachCommaEvent('e-amt');
 });
@@ -252,13 +294,13 @@ window.editIncome = function(id) {
     inc.name = document.getElementById('i-name').value;
     inc.date = document.getElementById('i-date').value;
     inc.amount = getRawNumber(document.getElementById('i-amt').value);
-    saveData(); renderIncomes(); window.closeModal();
+    saveData(); window.closeModal();
   });
   attachCommaEvent('i-amt');
 };
 
 window.deleteIncome = function(id) {
-  if(confirm('정말 삭제할까요?')) { appData.incomes = appData.incomes.filter(i => i.id !== id); saveData(); renderIncomes(); window.closeModal(); }
+  if(confirm('정말 삭제할까요?')) { appData.incomes = appData.incomes.filter(i => i.id !== id); saveData(); window.closeModal(); }
 };
 
 document.getElementById('btn-add-income').addEventListener('click', () => {
@@ -272,7 +314,7 @@ document.getElementById('btn-add-income').addEventListener('click', () => {
       id: Date.now(), name: document.getElementById('i-name').value, 
       date: document.getElementById('i-date').value, amount: getRawNumber(document.getElementById('i-amt').value) 
     });
-    saveData(); renderIncomes(); window.closeModal();
+    saveData(); window.closeModal();
   });
   attachCommaEvent('i-amt');
 });
@@ -304,8 +346,3 @@ function renderCatModal() {
   `;
   openModal('카테고리 관리', html, null, false); 
 }
-
-// 초기 실행
-updateHome();
-renderExpenses();
-renderIncomes();

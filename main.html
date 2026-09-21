@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>우리집 가계부 - 로그인</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--coral-main);
+      margin-bottom: 8px;
+    }
+    .login-desc {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 40px;
+    }
+    .login-form {
+      width: 100%;
+      background: #fff;
+      padding: 24px 20px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      text-align: left;
+    }
+    .toggle-text {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #666;
+      cursor: pointer;
+    }
+    .toggle-text b {
+      color: var(--coral-main);
+    }
+    .error-msg {
+      color: #FF4B4B;
+      font-size: 12px;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-wrapper">
+    <div class="login-container">
+      
+      <div class="login-logo">💰 월급 찍고 갑니다</div>
+      <p class="login-desc" id="form-subtitle">스마트한 자산 관리 가계부</p>
+
+      <div class="login-form">
+        <div class="form-group">
+          <label>이메일 주소</label>
+          <input type="email" id="email-input" class="form-input" placeholder="example@email.com">
+        </div>
+        <div class="form-group" style="margin-top: 16px;">
+          <label>비밀번호</label>
+          <input type="password" id="password-input" class="form-input" placeholder="비밀번호 입력 (6자리 이상)">
+        </div>
+        
+        <div id="error-box" class="error-msg"></div>
+
+        <button class="pretty-btn coral-btn" id="submit-btn" style="margin-top: 24px;">로그인</button>
+      </div>
+
+      <div class="toggle-text" id="toggle-mode">
+        계정이 없으신가요? <b id="toggle-btn-text">회원가입하기</b>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG86jGSCHmadOn4_LdymWtT37XMEA4EFE",
+      authDomain: "dnjfrmq.firebaseapp.com",
+      projectId: "dnjfrmq",
+      storageBucket: "dnjfrmq.firebasestorage.app",
+      messagingSenderId: "942049894622",
+      appId: "1:942049894622:web:8dc62411fac925e5b1224f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    let isSignUpMode = false;
+
+    const submitBtn = document.getElementById('submit-btn');
+    const toggleMode = document.getElementById('toggle-mode');
+    const formSubtitle = document.getElementById('form-subtitle');
+    const toggleBtnText = document.getElementById('toggle-btn-text');
+    const errorBox = document.getElementById('error-box');
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    toggleMode.addEventListener('click', () => {
+      isSignUpMode = !isSignUpMode;
+      if (isSignUpMode) {
+        formSubtitle.textContent = "공유 계정 생성을 위해 정보를 입력하세요";
+        submitBtn.textContent = "회원가입";
+        toggleBtnText.textContent = "로그인하기";
+      } else {
+        formSubtitle.textContent = "스마트한 자산 관리 가계부";
+        submitBtn.textContent = "로그인";
+        toggleBtnText.textContent = "회원가입하기";
+      }
+      errorBox.textContent = "";
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      const email = document.getElementById('email-input').value.trim();
+      const password = document.getElementById('password-input').value.trim();
+
+      if (!email || !password) {
+        errorBox.textContent = "이메일과 비밀번호를 모두 입력해주세요.";
+        return;
+      }
+
+      try {
+        if (isSignUpMode) {
+          await createUserWithEmailAndPassword(auth, email, password);
+          alert("회원가입이 완료되었습니다!");
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (error) {
+        console.error(error);
+        if (error.code === 'auth/invalid-email') {
+          errorBox.textContent = "올바른 이메일 형식이 아닙니다.";
+        } else if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+          errorBox.textContent = "존재하지 않거나 비밀번호가 틀렸습니다.";
+        } else if (error.code === 'auth/email-already-in-use') {
+          errorBox.textContent = "이미 가입된 이메일입니다.";
+        } else if (error.code === 'auth/weak-password') {
+          errorBox.textContent = "비밀번호는 6자리 이상이어야 합니다.";
+        } else {
+          errorBox.textContent = "로그인 실패: " + error.message;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -3,22 +3,18 @@
 *::-webkit-scrollbar { display: none; }
 input, textarea, select { user-select: auto; }
 
-/* PC에서도 모바일처럼 보이게 하는 래퍼 설정 */
 body { font-family: sans-serif; background-color: #E9ECEF; color: var(--text-main); overscroll-behavior-y: none; display: flex; justify-content: center; }
 #app-wrapper { width: 100%; max-width: 430px; background-color: var(--bg-color); min-height: 100vh; position: relative; box-shadow: 0 0 25px rgba(0,0,0,0.1); padding-bottom: 80px; overflow-x: hidden; }
 
-/* 헤더 및 시계 */
 .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background-color: #fff; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
 .app-header h1 { font-size: 16px; font-weight: 600; margin: 0; }
 #header-clock { font-size: 11px; color: #888; text-align: right; line-height: 1.1; font-weight: 500; }
 .big-day { font-size: 20px; font-weight: bold; color: var(--coral-main); }
 
-/* 탭 전환 */
 .tab-section { display: none; padding: 16px; animation: fadeIn 0.2s; }
 .tab-section.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-/* 위젯 분리 디자인 */
 .widget { background-color: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 12px; }
 .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .subtitle { font-size: 13px; color: #888; font-weight: 600; }
@@ -33,39 +29,33 @@ body { font-family: sans-serif; background-color: #E9ECEF; color: var(--text-mai
 .red-text { color: #FF4B4B; }
 .green-text { color: #4CAF50; }
 
-/* 리스트 아이템 */
 .list-item { background-color: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 .item-info { flex: 1; cursor: pointer; } 
 .item-action { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 
-/* 납부 버튼 */
 .pay-btn { padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; border: 1px solid var(--border-color); background: #fff; color: #888; cursor: pointer; transition: 0.1s; }
 .pay-btn:active { transform: scale(0.95); }
 .pay-btn.paid { background-color: #E8F5E9; color: #4CAF50; border-color: #4CAF50; }
 .paid-time { font-size: 11px; color: #999; }
 
-/* 버튼 */
 .pretty-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; }
 .outline-btn { background-color: #fff; border: 1px solid var(--coral-main); color: var(--coral-main); margin-bottom: 16px; }
 .coral-btn { background-color: var(--coral-main); color: #fff; }
 .gray-btn { background-color: #F0F0F0; color: #555; }
 .fab-btn { position: absolute; right: 20px; bottom: 85px; width: 56px; height: 56px; background-color: var(--coral-main); color: white; border: none; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 12px rgba(255, 139, 167, 0.4); z-index: 100; cursor: pointer; }
 
-/* 하단 네비게이션 래퍼 내부 고정 */
 .bottom-nav { position: absolute; bottom: 0; width: 100%; height: 65px; background-color: #fff; border-top: 1px solid var(--border-color); display: flex; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
 .nav-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; color: #C0C0C0; position: relative; cursor: pointer;}
 .nav-item span { font-size: 11px; margin-top: 4px; }
 .nav-item.active { color: var(--coral-main); font-weight: bold; }
 .nav-item:not(:last-child)::after { content: ''; position: absolute; right: 0; top: 25%; height: 50%; width: 1px; background-color: var(--border-color); }
 
-/* 모달 */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999; display: flex; justify-content: center; align-items: flex-end; opacity: 0; visibility: hidden; transition: 0.3s; }
 .modal-overlay.show { opacity: 1; visibility: visible; }
 .modal-content { background-color: #fff; width: 100%; max-width: 430px; padding: 24px 20px 32px; border-radius: 24px 24px 0 0; transform: translateY(100%); transition: 0.3s; }
 .modal-overlay.show .modal-content { transform: translateY(0); }
 .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 
-/* 폼 */
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
 .form-input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; outline: none; background: #fff;}
