@@ -35,6 +35,21 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.02);
       text-align: left;
     }
+    /* 체크박스 영역 스타일 */
+    .checkbox-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #666;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
     .toggle-text {
       margin-top: 20px;
       font-size: 13px;
@@ -61,15 +76,28 @@
       <p class="login-desc" id="form-subtitle">스마트한 자산 관리 가계부</p>
 
       <div class="login-form">
+        <!-- 닉네임 (회원가입 시에만 표시) -->
+        <div class="form-group" id="nickname-group" style="display: none; margin-bottom: 16px;">
+          <label>닉네임</label>
+          <input type="text" id="nickname-input" class="form-input" placeholder="사용할 닉네임 입력">
+        </div>
+
         <div class="form-group">
           <label>이메일 주소</label>
           <input type="email" id="email-input" class="form-input" placeholder="example@email.com">
         </div>
+
         <div class="form-group" style="margin-top: 16px;">
           <label>비밀번호</label>
           <input type="password" id="password-input" class="form-input" placeholder="비밀번호 입력 (6자리 이상)">
         </div>
         
+        <!-- 아이디 저장 및 자동 로그인 체크박스 -->
+        <div class="checkbox-group">
+          <label><input type="checkbox" id="save-email"> 아이디 저장</label>
+          <label><input type="checkbox" id="auto-login"> 자동 로그인</label>
+        </div>
+
         <div id="error-box" class="error-msg"></div>
 
         <button class="pretty-btn coral-btn" id="submit-btn" style="margin-top: 24px;">로그인</button>
@@ -84,7 +112,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, setPersistence, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCG86jGSCHmadOn4_LdymWtT37XMEA4EFE",
@@ -105,8 +133,27 @@
     const formSubtitle = document.getElementById('form-subtitle');
     const toggleBtnText = document.getElementById('toggle-btn-text');
     const errorBox = document.getElementById('error-box');
+    const nicknameGroup = document.getElementById('nickname-group');
+    const emailInput = document.getElementById('email-input');
+    const saveEmailCheckbox = document.getElementById('save-email');
+    const autoLoginCheckbox = document.getElementById('auto-login');
 
+    // 1. 저장된 이메일 불러오기
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+      saveEmailCheckbox.checked = true;
+    }
+
+    // 2. 자동 로그인 체크박스 초기 상태 복원 (LocalStorage에 저장해둠)
+    const savedAutoLogin = localStorage.getItem('savedAutoLogin');
+    if (savedAutoLogin === 'true') {
+      autoLoginCheckbox.checked = true;
+    }
+
+    // 3. 페이지 진입 시 자동 로그인 처리 검증 (onAuthStateChanged)
     onAuthStateChanged(auth, (user) => {
+      // 만약 유저가 존재하고, 현재 페이지가 main.html이라면 index.html로 이동
       if (user) {
         window.location.href = "index.html";
       }
@@ -115,33 +162,52 @@
     toggleMode.addEventListener('click', () => {
       isSignUpMode = !isSignUpMode;
       if (isSignUpMode) {
-        formSubtitle.textContent = "공유 계정 생성을 위해 정보를 입력하세요";
+        formSubtitle.textContent = "가족 공유를 위한 계정을 만드세요";
         submitBtn.textContent = "회원가입";
         toggleBtnText.textContent = "로그인하기";
+        nicknameGroup.style.display = "block";
       } else {
         formSubtitle.textContent = "스마트한 자산 관리 가계부";
         submitBtn.textContent = "로그인";
         toggleBtnText.textContent = "회원가입하기";
+        nicknameGroup.style.display = "none";
       }
       errorBox.textContent = "";
     });
 
     submitBtn.addEventListener('click', async () => {
-      const email = document.getElementById('email-input').value.trim();
+      const email = emailInput.value.trim();
       const password = document.getElementById('password-input').value.trim();
+      const nickname = document.getElementById('nickname-input').value.trim();
 
-      if (!email || !password) {
-        errorBox.textContent = "이메일과 비밀번호를 모두 입력해주세요.";
+      if (!email || !password || (isSignUpMode && !nickname)) {
+        errorBox.textContent = "모든 항목을 입력해주세요.";
         return;
       }
 
       try {
+        // 🌟 핵심 수정: 퍼시스턴스 설정이 완료될 때까지 확실하게 await으로 대기
+        const persistenceType = autoLoginCheckbox.checked ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, persistenceType);
+
         if (isSignUpMode) {
-          await createUserWithEmailAndPassword(auth, email, password);
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(userCredential.user, { displayName: nickname });
           alert("회원가입이 완료되었습니다!");
         } else {
           await signInWithEmailAndPassword(auth, email, password);
         }
+
+        // 아이디 저장 및 자동 로그인 체크 상태 저장
+        if (saveEmailCheckbox.checked) {
+          localStorage.setItem('savedEmail', email);
+        } else {
+          localStorage.removeItem('savedEmail');
+        }
+
+        localStorage.setItem('savedAutoLogin', autoLoginCheckbox.checked);
+
+        window.location.href = "index.html";
       } catch (error) {
         console.error(error);
         if (error.code === 'auth/invalid-email') {

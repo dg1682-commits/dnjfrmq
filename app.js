@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getAuth, setPersistence, browserSessionPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-/* ================= 1. 파이어베이스 및 데이터 초기화 ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCG86jGSCHmadOn4_LdymWtT37XMEA4EFE",
   authDomain: "dnjfrmq.firebaseapp.com",
@@ -13,7 +13,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const docRef = doc(db, "household", "myHome"); // 데이터베이스 저장소 이름
+const auth = getAuth(app);
+
+// 🌟 자동 로그인 방지 (브라우저 창을 닫거나 새로고침하면 로그인이 풀림)
+setPersistence(auth, browserSessionPersistence).catch((error) => {
+  console.error("Persistence error:", error);
+});
+
+const docRef = doc(db, "household", "myHome");
 
 const defaultCategories = ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'];
 let appData = { expenses: [], incomes: [], categories: defaultCategories, widgetOrder: [] };
@@ -346,3 +353,57 @@ function renderCatModal() {
   `;
   openModal('카테고리 관리', html, null, false); 
 }
+
+/* ================= 설정: 전체 데이터 초기화 기능 ================= */
+document.getElementById('btn-reset-data').addEventListener('click', () => {
+  openModal(
+    '데이터 초기화 경고', 
+    `<p style="text-align:center; color:#FF4B4B; font-weight:bold;">정말 모든 소득과 지출,<br>커스텀 카테고리 데이터를 삭제하시겠습니까?<br><span style="font-size:12px; color:#888; font-weight:normal;">(이 작업은 되돌릴 수 없습니다)</span></p>`, 
+    async () => {
+      // 파이어베이스 데이터 및 로컬 데이터 구조 초기화
+      appData = {
+        expenses: [],
+        incomes: [],
+        categories: ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'],
+        widgetOrder: []
+      };
+      
+      // 클라우드(파이어베이스) 저장소에 빈 데이터 덮어쓰기
+      await saveData();
+      window.closeModal();
+      alert('모든 데이터가 초기화되었습니다.');
+      location.reload(); // 화면 새로고침
+    }
+  );
+});
+
+/* ================= 로그인 유저 헤더 표기 및 모달 로그아웃 기능 ================= */
+onAuthStateChanged(auth, (user) => {
+  const emailEl = document.getElementById('header-user-email');
+  if (user) {
+    if (emailEl) {
+      const displayName = user.displayName || (user.email ? user.email.split('@')[0] : "사용자");
+      emailEl.textContent = displayName;
+    }
+  } else {
+    // 로그인이 안 되어 있거나 로그아웃된 경우 로그인창으로 이동
+    window.location.href = "main.html";
+  }
+});
+
+// 로그아웃 버튼 클릭 시 브라우저 기본창 대신 바텀 시트 모달 띄우기
+document.getElementById('btn-logout').addEventListener('click', () => {
+  openModal(
+    '로그아웃',
+    `<p style="text-align:center; color:#333; font-weight:500;">정말 로그아웃 하시겠습니까?</p>`,
+    async () => {
+      try {
+        await signOut(auth);
+        window.closeModal();
+      } catch (error) {
+        console.error("로그아웃 실패:", error);
+        alert("로그아웃 중 문제가 발생했습니다.");
+      }
+    }
+  );
+});

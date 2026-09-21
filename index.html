@@ -11,7 +11,15 @@
   
   <div id="app-wrapper">
     <header class="app-header">
-      <h1 id="header-title">월급 찍고 갑니다</h1>
+      <!-- 왼쪽: 로그인된 아이디 (작은 글씨) -->
+      <div id="header-user-email" style="font-size: 11px; color: #888; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;">
+    로그인 중...
+      </div>
+
+      <!-- 가운데: 타이틀 -->
+      <h1 id="header-title" style="position: absolute; left: 50%; transform: translateX(-50%); margin: 0; font-size: 15px; font-weight: 600;">월급 찍고 갑니다</h1>
+
+      <!-- 오른쪽: 실시간 시계 -->
       <div id="header-clock"></div>
     </header>
 
@@ -85,6 +93,17 @@
         <div class="widget-title" style="margin-left: 10px;">데이터 관리</div>
         <div class="list-item" id="btn-manage-categories" style="cursor: pointer;">
           <span>📂 지출 항목/카테고리 관리</span><span>></span>
+        </div>
+
+        <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">계정 관리</div>
+        <!-- ⬇️ 로그아웃 버튼 추가 ⬇️ -->
+        <div class="list-item" id="btn-logout" style="cursor: pointer;">
+          <span style="color: #3182F6; font-weight: 600;">🚪 로그아웃</span><span>></span>
+        </div>
+
+        <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">앱 설정</div>
+        <div class="list-item" id="btn-reset-data" style="cursor: pointer;">
+          <span class="red-text">⚠️ 전체 데이터 초기화</span><span>></span>
         </div>
       </section>
     </main>
