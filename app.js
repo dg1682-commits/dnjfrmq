@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getAuth, setPersistence, browserSessionPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+/* ================= 1. 파이어베이스 및 데이터 초기화 ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCG86jGSCHmadOn4_LdymWtT37XMEA4EFE",
   authDomain: "dnjfrmq.firebaseapp.com",
@@ -14,28 +15,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
-// 🌟 자동 로그인 방지 (브라우저 창을 닫거나 새로고침하면 로그인이 풀림)
-setPersistence(auth, browserSessionPersistence).catch((error) => {
-  console.error("Persistence error:", error);
-});
-
 const docRef = doc(db, "household", "myHome");
 
 const defaultCategories = ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'];
 let appData = { expenses: [], incomes: [], categories: defaultCategories, widgetOrder: [] };
 let isFirstLoad = true;
 
-// 파이어베이스 실시간 연동 (데이터가 바뀌면 화면 즉시 갱신)
 onSnapshot(docRef, (docSnap) => {
   if (docSnap.exists()) {
     appData = docSnap.data();
   } else {
-    // 최초 실행 시 기본 데이터베이스 생성
     setDoc(docRef, appData);
   }
 
-  // 처음 불러올 때만 저장된 위젯 순서를 적용 (드래그 중 튕김 방지)
   if (isFirstLoad) {
     applyWidgetOrder();
     isFirstLoad = false;
@@ -47,7 +39,7 @@ onSnapshot(docRef, (docSnap) => {
 });
 
 function saveData() {
-  setDoc(docRef, appData); // 로컬 스토리지가 아닌 파이어베이스에 저장
+  setDoc(docRef, appData);
 }
 
 function formatMoney(num) { return Number(num).toLocaleString() + ' 원'; }
@@ -62,7 +54,7 @@ function attachCommaEvent(inputId) {
 }
 
 
-/* ================= 2. 위젯 순서 및 홈 화면 갱신 ================= */
+/* ================= 2. 위젯 순서 및 홈 갱신 ================= */
 function applyWidgetOrder() {
   if (appData.widgetOrder && appData.widgetOrder.length > 0) {
     const container = document.getElementById('tab-home');
@@ -73,7 +65,6 @@ function applyWidgetOrder() {
   }
 }
 
-// 위젯 드래그 앤 드롭 및 순서 파이어베이스 저장
 new Sortable(document.getElementById('tab-home'), {
   handle: '.drag-handle',
   animation: 150,
@@ -128,31 +119,56 @@ setInterval(updateClock, 1000);
 updateClock();
 
 
-/* ================= 4. 화면 전환 및 모달 ================= */
+/* ================= 4. 화면 전환, 스와이프 및 플로팅 버튼 제어 ================= */
 const navItems = document.querySelectorAll('.nav-item');
 const tabSections = document.querySelectorAll('.tab-section');
 const tabNames = ['월급 찍고 갑니다', '소득', '지출', '분석', '설정'];
+const fabBtn = document.getElementById('btn-floating-add');
 let currentIndex = 0;
 
 function switchTab(idx) {
   if(idx < 0 || idx >= tabSections.length) return;
   currentIndex = idx;
+  
   navItems.forEach(nav => nav.classList.remove('active'));
   tabSections.forEach(sec => sec.classList.remove('active'));
+  
   navItems[currentIndex].classList.add('active');
   tabSections[currentIndex].classList.add('active');
   document.getElementById('header-title').textContent = tabNames[currentIndex];
+
+  // 🌟 소득(1) 혹은 지출(2) 탭일 때만 플로팅 버튼 노출 (위치 점프 없이 제자리에 즉시 고정)
+  if (currentIndex === 1 || currentIndex === 2) {
+    fabBtn.style.display = 'flex';
+  } else {
+    fabBtn.style.display = 'none';
+  }
 }
+
 navItems.forEach((item, idx) => item.addEventListener('click', () => switchTab(idx)));
 
+// 🌟 모든 탭에서 좌우 스와이프가 동작하도록 전역 감지
 let startX = 0; let endX = 0;
-document.getElementById('app-content').addEventListener('touchstart', e => startX = e.touches[0].clientX);
-document.getElementById('app-content').addEventListener('touchend', e => {
-  endX = e.changedTouches[0].clientX;
-  if(startX - endX > 60) switchTab(currentIndex + 1);
-  else if(endX - startX > 60) switchTab(currentIndex - 1);
+const appWrapper = document.getElementById('app-wrapper');
+
+appWrapper.addEventListener('touchstart', e => {
+  startX = e.touches[0].clientX;
 });
 
+appWrapper.addEventListener('touchend', e => {
+  endX = e.changedTouches[0].clientX;
+  const diff = startX - endX;
+  if (Math.abs(diff) > 50) { // 50px 이상 밀었을 때
+    if (diff > 0) {
+      switchTab(currentIndex + 1); // 왼쪽으로 밀면 다음 탭
+    } else {
+      switchTab(currentIndex - 1); // 오른쪽으로 밀면 이전 탭
+    }
+  }
+});
+
+
+/* ================= 5. 모달 제어 ================= */
 const modal = document.getElementById('custom-modal');
 const mTitle = document.getElementById('modal-title');
 const mBody = document.getElementById('modal-body');
@@ -172,11 +188,10 @@ document.getElementById('modal-cancel').addEventListener('click', window.closeMo
 mConfirm.onclick = () => { if(confirmAction) confirmAction(); };
 
 
-/* ================= 5. 지출 로직 ================= */
+/* ================= 6. 지출 로직 ================= */
 const expenseList = document.getElementById('expense-list');
 function renderExpenses() {
   expenseList.innerHTML = '';
-  
   const sortedExpenses = [...appData.expenses].sort((a, b) => {
     if (a.isPaid !== b.isPaid) return a.isPaid ? 1 : -1;
     return Number(a.date) - Number(b.date);
@@ -207,7 +222,7 @@ window.togglePaid = function(id) {
   if(!exp) return;
 
   if (exp.isPaid) {
-    openModal('납부 취소', `<p style="text-align:center;">정말 <b>[${exp.name}]</b> 항목의<br>납부 완료 상태를 취소하시겠습니까?</p>`, () => {
+    openModal('납부 취소', `<p style="text-align:center; color:#333;">정말 <b>[${exp.name}]</b> 항목의<br>납부 완료 상태를 취소하시겠습니까?</p>`, () => {
       exp.isPaid = false;
       exp.paidAt = null;
       saveData(); window.closeModal();
@@ -248,29 +263,47 @@ window.deleteExpense = function(id) {
   }
 };
 
-document.getElementById('btn-add-expense').addEventListener('click', () => {
-  const opts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-  const html = `
-    <div class="form-group"><label>카테고리</label><select id="e-cat" class="form-input">${opts}</select></div>
-    <div class="form-group"><label>항목명</label><input type="text" id="e-name" class="form-input" placeholder="예: 월세"></div>
-    <div class="form-group"><label>출금일</label><input type="number" id="e-date" class="form-input" placeholder="숫자 (예: 20)"></div>
-    <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="e-amt" class="form-input" placeholder="금액 입력"></div>
-  `;
-  openModal('새 지출 등록', html, () => {
-    const rawAmt = getRawNumber(document.getElementById('e-amt').value);
-    if (!rawAmt) return alert("금액을 정확히 입력해주세요.");
-    appData.expenses.push({
-      id: Date.now(), category: document.getElementById('e-cat').value,
-      name: document.getElementById('e-name').value, date: document.getElementById('e-date').value,
-      amount: rawAmt, isPaid: false, paidAt: null
+fabBtn.addEventListener('click', () => {
+  if (currentIndex === 2) {
+    // 지출 추가 모달
+    const opts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    const html = `
+      <div class="form-group"><label>카테고리</label><select id="e-cat" class="form-input">${opts}</select></div>
+      <div class="form-group"><label>항목명</label><input type="text" id="e-name" class="form-input" placeholder="예: 월세"></div>
+      <div class="form-group"><label>출금일</label><input type="number" id="e-date" class="form-input" placeholder="숫자 (예: 20)"></div>
+      <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="e-amt" class="form-input" placeholder="금액 입력"></div>
+    `;
+    openModal('새 지출 등록', html, () => {
+      const rawAmt = getRawNumber(document.getElementById('e-amt').value);
+      if (!rawAmt) return alert("금액을 정확히 입력해주세요.");
+      appData.expenses.push({
+        id: Date.now(), category: document.getElementById('e-cat').value,
+        name: document.getElementById('e-name').value, date: document.getElementById('e-date').value,
+        amount: rawAmt, isPaid: false, paidAt: null
+      });
+      saveData(); window.closeModal();
     });
-    saveData(); window.closeModal();
-  });
-  attachCommaEvent('e-amt');
+    attachCommaEvent('e-amt');
+  } else if (currentIndex === 1) {
+    // 소득 추가 모달
+    const html = `
+      <div class="form-group"><label>항목명</label><input type="text" id="i-name" class="form-input" placeholder="예: 급여"></div>
+      <div class="form-group"><label>입금일</label><input type="number" id="i-date" class="form-input" placeholder="예: 20"></div>
+      <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="i-amt" class="form-input" placeholder="금액 입력"></div>
+    `;
+    openModal('새 소득 등록', html, () => {
+      appData.incomes.push({ 
+        id: Date.now(), name: document.getElementById('i-name').value, 
+        date: document.getElementById('i-date').value, amount: getRawNumber(document.getElementById('i-amt').value) 
+      });
+      saveData(); window.closeModal();
+    });
+    attachCommaEvent('i-amt');
+  }
 });
 
 
-/* ================= 6. 소득 로직 ================= */
+/* ================= 7. 소득 로직 ================= */
 const incomeList = document.getElementById('income-list');
 function renderIncomes() {
   incomeList.innerHTML = '';
@@ -310,24 +343,8 @@ window.deleteIncome = function(id) {
   if(confirm('정말 삭제할까요?')) { appData.incomes = appData.incomes.filter(i => i.id !== id); saveData(); window.closeModal(); }
 };
 
-document.getElementById('btn-add-income').addEventListener('click', () => {
-  const html = `
-    <div class="form-group"><label>항목명</label><input type="text" id="i-name" class="form-input" placeholder="예: 급여"></div>
-    <div class="form-group"><label>입금일</label><input type="number" id="i-date" class="form-input" placeholder="예: 20"></div>
-    <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="i-amt" class="form-input" placeholder="금액 입력"></div>
-  `;
-  openModal('새 소득 등록', html, () => {
-    appData.incomes.push({ 
-      id: Date.now(), name: document.getElementById('i-name').value, 
-      date: document.getElementById('i-date').value, amount: getRawNumber(document.getElementById('i-amt').value) 
-    });
-    saveData(); window.closeModal();
-  });
-  attachCommaEvent('i-amt');
-});
 
-
-/* ================= 7. 카테고리 로직 ================= */
+/* ================= 8. 카테고리 및 설정 로직 ================= */
 document.getElementById('btn-manage-categories').addEventListener('click', () => { renderCatModal(); });
 
 window.removeCat = function(idx) {
@@ -354,30 +371,23 @@ function renderCatModal() {
   openModal('카테고리 관리', html, null, false); 
 }
 
-/* ================= 설정: 전체 데이터 초기화 기능 ================= */
+// 전체 초기화
 document.getElementById('btn-reset-data').addEventListener('click', () => {
   openModal(
     '데이터 초기화 경고', 
     `<p style="text-align:center; color:#FF4B4B; font-weight:bold;">정말 모든 소득과 지출,<br>커스텀 카테고리 데이터를 삭제하시겠습니까?<br><span style="font-size:12px; color:#888; font-weight:normal;">(이 작업은 되돌릴 수 없습니다)</span></p>`, 
     async () => {
-      // 파이어베이스 데이터 및 로컬 데이터 구조 초기화
-      appData = {
-        expenses: [],
-        incomes: [],
-        categories: ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'],
-        widgetOrder: []
-      };
-      
-      // 클라우드(파이어베이스) 저장소에 빈 데이터 덮어쓰기
+      appData = { expenses: [], incomes: [], categories: defaultCategories, widgetOrder: [] };
       await saveData();
       window.closeModal();
       alert('모든 데이터가 초기화되었습니다.');
-      location.reload(); // 화면 새로고침
+      location.reload();
     }
   );
 });
 
-/* ================= 로그인 유저 헤더 표기 및 모달 로그아웃 기능 ================= */
+
+/* ================= 9. 인증 및 로그아웃 ================= */
 onAuthStateChanged(auth, (user) => {
   const emailEl = document.getElementById('header-user-email');
   if (user) {
@@ -386,12 +396,10 @@ onAuthStateChanged(auth, (user) => {
       emailEl.textContent = displayName;
     }
   } else {
-    // 로그인이 안 되어 있거나 로그아웃된 경우 로그인창으로 이동
     window.location.href = "main.html";
   }
 });
 
-// 로그아웃 버튼 클릭 시 브라우저 기본창 대신 바텀 시트 모달 띄우기
 document.getElementById('btn-logout').addEventListener('click', () => {
   openModal(
     '로그아웃',
