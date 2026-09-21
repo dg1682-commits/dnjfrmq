@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>우리집 가계부</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body>
+  
+  <!-- 모바일 비율 고정 래퍼 (S25 등 최신폰 비율 최적화) -->
+  <div id="app-wrapper">
+    
+    <header class="app-header">
+      <h1 id="header-title">월급 찍고 갑니다</h1>
+      <!-- 실시간 시계 영역 추가 -->
+      <div id="header-clock"></div>
+    </header>
+
+    <main id="app-content">
+      <!-- 1. 홈 (위젯 분리 및 드래그 영역) -->
+      <section id="tab-home" class="tab-section active">
+        
+        <div class="widget center-text">
+          <div class="widget-header">
+            <span class="subtitle">이번 달 남은 예산</span>
+            <span class="drag-handle">☰</span>
+          </div>
+          <h2 class="main-amount" id="home-balance">0 원</h2>
+        </div>
+
+        <div class="widget center-text">
+          <div class="widget-header">
+            <span class="subtitle">총 수입</span>
+            <span class="drag-handle">☰</span>
+          </div>
+          <h3 class="blue-text widget-amount" id="home-total-income">0 원</h3>
+        </div>
+
+        <div class="widget center-text">
+          <div class="widget-header">
+            <span class="subtitle">납부 완료</span>
+            <span class="drag-handle">☰</span>
+          </div>
+          <h3 class="green-text widget-amount" id="home-paid-amount">0 원</h3>
+        </div>
+
+        <div class="widget center-text">
+          <div class="widget-header">
+            <span class="subtitle">미납 금액 (연체)</span>
+            <span class="drag-handle">☰</span>
+          </div>
+          <h3 class="red-text widget-amount" id="home-unpaid-amount">0 원</h3>
+        </div>
+
+        <div class="widget center-text">
+          <div class="widget-header">
+            <span class="subtitle" id="date-subtitle">지출 예정 (오늘 기준)</span>
+            <span class="drag-handle">☰</span>
+          </div>
+          <h3 class="widget-amount" id="home-expected-amount">0 원</h3>
+        </div>
+
+      </section>
+
+      <!-- 2. 소득 -->
+      <section id="tab-income" class="tab-section">
+        <button class="pretty-btn outline-btn">📷 급여명세서 등록 (준비중)</button>
+        <div class="list-container" id="income-list"></div>
+        <button class="fab-btn" id="btn-add-income">+</button>
+      </section>
+
+      <!-- 3. 지출 -->
+      <section id="tab-expense" class="tab-section">
+        <div class="list-container" id="expense-list"></div>
+        <button class="fab-btn" id="btn-add-expense">+</button>
+      </section>
+
+      <!-- 4. 분석 -->
+      <section id="tab-analysis" class="tab-section">
+        <div class="widget"><p style="text-align:center; padding: 40px 0; color: #888;">차트 준비 중</p></div>
+      </section>
+
+      <!-- 5. 설정 -->
+      <section id="tab-settings" class="tab-section">
+        <div class="widget-title" style="margin-left: 10px;">데이터 관리</div>
+        <div class="list-item" id="btn-manage-categories" style="cursor: pointer;">
+          <span>📂 지출 항목/카테고리 관리</span><span>></span>
+        </div>
+        <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">앱 설정</div>
+        <div class="list-item" onclick="if(confirm('데이터를 모두 지울까요?')) { localStorage.clear(); location.reload(); }" style="cursor: pointer;">
+          <span class="red-text">⚠️ 전체 데이터 초기화</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- 하단 메뉴 -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-index="0" data-target="tab-home">🏠<span>홈</span></div>
+      <div class="nav-item" data-index="1" data-target="tab-income">💰<span>소득</span></div>
+      <div class="nav-item" data-index="2" data-target="tab-expense">💸<span>지출</span></div>
+      <div class="nav-item" data-index="3" data-target="tab-analysis">📊<span>분석</span></div>
+      <div class="nav-item" data-index="4" data-target="tab-settings">⚙️<span>설정</span></div>
+    </nav>
+
+    <!-- 바텀 시트 모달 -->
+    <div class="modal-overlay" id="custom-modal">
+      <div class="modal-content">
+        <h3 id="modal-title">등록</h3>
+        <div id="modal-body" style="margin-top: 20px; max-height: 60vh; overflow-y: auto;"></div>
+        <div class="modal-buttons" id="modal-action-btns">
+          <button class="pretty-btn gray-btn" id="modal-cancel">취소</button>
+          <button class="pretty-btn coral-btn" id="modal-confirm">확인</button>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- app-wrapper 끝 -->
+
+  <script src="app.js"></script>
+</body>
+</html>
