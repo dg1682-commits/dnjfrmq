@@ -16,7 +16,6 @@
       <div id="header-clock"></div>
     </header>
 
-    <!-- 스와이프를 감지할 메인 영역 -->
     <main id="app-content">
       
       <!-- 1. 홈 -->
@@ -31,34 +30,50 @@
 
         <div class="widget center-text" id="widget-income">
           <div class="widget-header">
-            <span class="subtitle">총 수입</span>
+            <div>
+              <span class="subtitle">총 수입</span>
+              <span class="expand-btn" onclick="toggleWidgetDetails('details-income')">▼ 펼침</span>
+            </div>
             <span class="drag-handle">☰</span>
           </div>
           <h3 class="blue-text widget-amount" id="home-total-income">0 원</h3>
+          <div id="details-income" class="widget-details"></div>
         </div>
 
         <div class="widget center-text" id="widget-paid">
           <div class="widget-header">
-            <span class="subtitle">납부 완료</span>
+            <div>
+              <span class="subtitle">납부 완료</span>
+              <span class="expand-btn" onclick="toggleWidgetDetails('details-paid')">▼ 펼침</span>
+            </div>
             <span class="drag-handle">☰</span>
           </div>
           <h3 class="green-text widget-amount" id="home-paid-amount">0 원</h3>
+          <div id="details-paid" class="widget-details"></div>
         </div>
 
         <div class="widget center-text" id="widget-unpaid">
           <div class="widget-header">
-            <span class="subtitle">미납 금액 (연체)</span>
+            <div>
+              <span class="subtitle">미납 금액 (연체)</span>
+              <span class="expand-btn" onclick="toggleWidgetDetails('details-unpaid')">▼ 펼침</span>
+            </div>
             <span class="drag-handle">☰</span>
           </div>
           <h3 class="red-text widget-amount" id="home-unpaid-amount">0 원</h3>
+          <div id="details-unpaid" class="widget-details"></div>
         </div>
 
         <div class="widget center-text" id="widget-expected">
           <div class="widget-header">
-            <span class="subtitle" id="date-subtitle">지출 예정 (오늘 기준)</span>
+            <div>
+              <span class="subtitle" id="date-subtitle">지출 예정</span>
+              <span class="expand-btn" onclick="toggleWidgetDetails('details-expected')">▼ 펼침</span>
+            </div>
             <span class="drag-handle">☰</span>
           </div>
           <h3 class="widget-amount" id="home-expected-amount">0 원</h3>
+          <div id="details-expected" class="widget-details"></div>
         </div>
       </section>
 
@@ -82,7 +97,13 @@
       <section id="tab-settings" class="tab-section">
         <div class="widget-title" style="margin-left: 10px;">데이터 관리</div>
         <div class="list-item" id="btn-manage-categories" style="cursor: pointer;">
-          <span>📂 지출 항목/카테고리 관리</span><span>></span>
+          <span>📂 카테고리 관리</span><span>></span>
+        </div>
+        <div class="list-item" id="btn-manage-paymethod" style="cursor: pointer;">
+          <span>💳 납부방법 관리</span><span>></span>
+        </div>
+        <div class="list-item" id="btn-manage-account" style="cursor: pointer;">
+          <span>🏦 계좌번호 관리</span><span>></span>
         </div>
 
         <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">계정 관리</div>
@@ -97,10 +118,8 @@
       </section>
     </main>
 
-    <!-- 공통 플로팅 등록 버튼 (+ 버튼이 탭 바뀔 때 위치 변하지 않고 항상 이 자리에 고정됨) -->
     <button class="fab-btn" id="btn-floating-add" style="display: none;">+</button>
 
-    <!-- 하단 메뉴 (화면 아래 완전히 고정) -->
     <nav class="bottom-nav">
       <div class="nav-item active" data-index="0" data-target="tab-home">🏠<span>홈</span></div>
       <div class="nav-item" data-index="1" data-target="tab-income">💰<span>소득</span></div>
@@ -109,7 +128,6 @@
       <div class="nav-item" data-index="4" data-target="tab-settings">⚙️<span>설정</span></div>
     </nav>
 
-    <!-- 바텀 시트 모달 -->
     <div class="modal-overlay" id="custom-modal">
       <div class="modal-content">
         <h3 id="modal-title">등록</h3>
@@ -120,7 +138,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <script type="module" src="app.js"></script>
