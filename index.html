@@ -12,7 +12,7 @@
   
   <div id="app-wrapper">
     <header class="app-header">
-      <div id="header-user-email">로그인 중...</div>
+      <div id="header-user-email">로그인 확인 중...</div>
       <h1 id="header-title">월급 찍고 갑니다</h1>
       <div id="header-clock"></div>
     </header>
@@ -68,10 +68,9 @@
       <!-- 2. 소득 -->
       <section id="tab-income" class="tab-section">
         <input type="file" id="ocr-upload" accept="image/*" style="display: none;">
-        <!-- 정기급여 자동 등록 버튼 -->
         <div class="widget center-text" style="padding:15px; border: 2px dashed var(--coral-main); cursor: pointer;" onclick="document.getElementById('ocr-upload').click()">
-          <h3 style="color:var(--coral-main); font-size:16px;">📸 정기급여 명세서 자동 등록</h3>
-          <p style="font-size:12px; color:#888; margin-top:5px;">명세서 이미지를 올리면 소득과 세금이 자동 분류됩니다</p>
+          <h3 style="color:var(--coral-main); font-size:16px;">📸 정기급여 자동 등록</h3>
+          <p style="font-size:12px; color:#888; margin-top:5px;">명세서 이미지를 올리면 소득과 세금이 자동 분석됩니다</p>
         </div>
         <div class="list-container" id="income-list"></div>
       </section>
@@ -117,6 +116,10 @@
         <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">앱 설정</div>
         <div class="list-item" id="btn-change-ledger-name" style="cursor: pointer;"><span>🏷️ 홈 화면 타이틀 변경</span><span>></span></div>
         <div class="list-item" style="justify-content: space-between;">
+          <span>내 월급/가족 월급 분리 관리</span>
+          <label class="toggle-switch"><input type="checkbox" id="toggle-salary-split"><span class="slider"></span></label>
+        </div>
+        <div class="list-item" style="justify-content: space-between;">
           <span>🌙 다크 모드</span>
           <label class="toggle-switch"><input type="checkbox" id="toggle-dark-mode"><span class="slider"></span></label>
         </div>
@@ -143,6 +146,7 @@
       <p style="margin-top: 15px; font-weight: bold; color: white;">AI가 명세서를 분석하고 있습니다...</p>
     </div>
 
+    <!-- 플로팅 버튼 여백 보정 -->
     <div class="fab-wrapper"><button class="fab-btn" id="btn-floating-add" style="display: none;">+</button></div>
 
     <nav class="bottom-nav">
