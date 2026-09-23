@@ -59,12 +59,13 @@ body.dark-mode .pay-btn.paid { background-color: rgba(76, 175, 80, 0.15); }
 .coral-btn { background-color: var(--coral-main); color: #fff; }
 .gray-btn { background-color: var(--border-color); color: var(--text-main); }
 
-/* 플로팅 버튼 우측 정렬 래퍼 */
-.fab-wrapper { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: flex-end; padding-right: 20px; pointer-events: none; z-index: 200; }
+/* 플로팅 버튼 우측 정렬 래퍼 (절대 하단 고정) */
+.fab-wrapper { position: fixed; bottom: 80px; width: 100%; max-width: 430px; left: 50%; transform: translateX(-50%); display: flex; justify-content: flex-end; padding-right: 20px; pointer-events: none; z-index: 200; }
 .fab-btn { pointer-events: auto; width: 56px; height: 56px; background-color: var(--coral-main); color: white; border: none; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 12px rgba(255, 139, 167, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .fab-btn:active { transform: scale(0.95); }
 
-.bottom-nav { position: absolute; bottom: 0; width: 100%; max-width: 430px; height: 65px; background-color: var(--widget-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 300; padding-bottom: env(safe-area-inset-bottom); }
+/* 하단 네비게이션 래퍼 내부 고정 (절대 하단 고정) */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; height: 65px; background-color: var(--widget-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 300; padding-bottom: env(safe-area-inset-bottom); }
 .nav-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; color: #C0C0C0; position: relative; cursor: pointer; transition: 0.15s; }
 .nav-item span { font-size: 11px; margin-top: 4px; }
 .nav-item.active { color: var(--coral-main); font-weight: bold; }
@@ -83,7 +84,6 @@ body.dark-mode .pay-btn.paid { background-color: rgba(76, 175, 80, 0.15); }
 .cat-tag { display: inline-block; padding: 6px 12px; background: var(--border-color); border-radius: 20px; font-size: 13px; margin: 0 5px 5px 0; color: var(--text-main); }
 .cat-tag.delete { background: rgba(211, 47, 47, 0.1); color: #D32F2F; cursor: pointer; }
 
-/* 토글 스위치 디자인 */
 .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 24px; }
