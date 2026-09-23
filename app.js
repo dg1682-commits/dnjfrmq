@@ -23,10 +23,11 @@ let unsubSnapshot = null;
 let isFirstLoad = true;
 
 const defaultCategories = ['집', '자동차', '대출', '개인', '보험', '어린이집', '공과금', '렌트', '통신', '기타'];
-const defaultPayAccounts = ['미지정', '신용카드', '카카오페이']; // 납부계좌
-const defaultWithdrawAccounts = ['미지정', '국민 111', '신한 222']; // 출금계좌
+const defaultPaymentMethods = ['자동이체', '직접송금', '앱결제', '지로납부']; // 🌟 복구된 납부방법
+const defaultPayAccounts = ['미지정', '신용카드', '카카오페이'];
+const defaultWithdrawAccounts = ['미지정', '국민 111', '신한 222'];
 
-let appData = { expenses: [], incomes: [], categories: defaultCategories, payAccounts: defaultPayAccounts, withdrawAccounts: defaultWithdrawAccounts, widgetOrder: [], separateSalary: false };
+let appData = { expenses: [], incomes: [], categories: defaultCategories, paymentMethods: defaultPaymentMethods, payAccounts: defaultPayAccounts, withdrawAccounts: defaultWithdrawAccounts, widgetOrder: [], separateSalary: false };
 
 /* ================= 2. 인증 및 가족 코드 연동 로직 ================= */
 onAuthStateChanged(auth, async (user) => {
@@ -35,12 +36,11 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (emailEl) emailEl.textContent = user.displayName || (user.email ? user.email.split('@')[0] : "사용자");
 
-    // 1) 유저 문서 확인 (가족코드 할당)
     const userDocRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userDocRef);
     if (!userSnap.exists()) {
       myFamilyCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      currentHouseholdId = user.uid; // 최초엔 본인 UID가 가구ID
+      currentHouseholdId = user.uid; 
       await setDoc(userDocRef, { householdId: currentHouseholdId, myCode: myFamilyCode });
     } else {
       currentHouseholdId = userSnap.data().householdId;
@@ -55,12 +55,13 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function loadHouseholdData() {
-  if (unsubSnapshot) unsubSnapshot(); // 기존 리스너 해제
+  if (unsubSnapshot) unsubSnapshot(); 
   const docRef = doc(db, "households", currentHouseholdId);
   
   unsubSnapshot = onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
       appData = docSnap.data();
+      if(!appData.paymentMethods) appData.paymentMethods = defaultPaymentMethods; // 🌟 납부방법 추가 검증
       if(!appData.payAccounts) appData.payAccounts = defaultPayAccounts;
       if(!appData.withdrawAccounts) appData.withdrawAccounts = defaultWithdrawAccounts;
       if(appData.separateSalary === undefined) appData.separateSalary = false;
@@ -85,7 +86,7 @@ document.getElementById('btn-link-family').addEventListener('click', async () =>
 
   try {
     const usersCol = collection(db, "users");
-    const q = query(usersCol); // 클라이언트 단일 쿼리용 전체 탐색 (소규모이므로 가능)
+    const q = query(usersCol); 
     const querySnapshot = await getDocs(q);
     let targetHouseholdId = null;
     querySnapshot.forEach((doc) => { if (doc.data().myCode === inputCode) targetHouseholdId = doc.data().householdId; });
@@ -124,7 +125,6 @@ document.getElementById('btn-restore-data').addEventListener('click', async () =
       html += `<button class="pretty-btn outline-btn" style="margin-bottom:10px; font-size:13px;" onclick="restoreBackup('${docSnap.id}')">${dateStr}</button>`;
     });
     
-    // 복구를 위한 전역 함수
     window.restoreBackup = async function(docId) {
       if(confirm('이 시점으로 복구하시겠습니까? (현재 데이터 덮어씌움)')) {
         const backupDoc = snaps.docs.find(d => d.id === docId);
@@ -266,7 +266,7 @@ function updateHome() {
   document.getElementById('details-expected').innerHTML = htmlExpected || '<p style="font-size:12px; color:#aaa; text-align:center;">내역 없음</p>';
 }
 
-/* ================= 6. 지출 및 소득 로직 ================= */
+/* ================= 6. 지출 및 소득 로직 (납부방법 복구) ================= */
 const expenseList = document.getElementById('expense-list');
 function renderExpenses() {
   expenseList.innerHTML = '';
@@ -282,7 +282,7 @@ function renderExpenses() {
       <div class="item-info" onclick="editExpense(${item.id})">
         <h3 style="font-size:15px; margin-bottom:4px; ${item.isPaid ? 'text-decoration:line-through; color:#aaa;' : ''}">${item.name}</h3>
         <p style="font-size:12px; color:#888;">${item.category} | 매월 ${item.date}일</p>
-        <p style="font-size:11px; color:#aaa; margin-top:2px;">[납부] ${item.payAccount || '-'} / [출금] ${item.withdrawAccount || '-'}</p>
+        <p style="font-size:11px; color:#aaa; margin-top:2px;">[방식] ${item.payMethod || '-'} / [납부] ${item.payAccount || '-'} / [출금] ${item.withdrawAccount || '-'}</p>
         <div style="font-weight:bold; margin-top:5px; color:${item.isPaid ? '#aaa' : '#333'};">${formatMoney(item.amount)}</div>
       </div>
       <div class="item-action">
@@ -314,6 +314,7 @@ window.editExpense = function(id) {
   const exp = appData.expenses.find(e => e.id === id);
   if(!exp) return;
   const catOpts = appData.categories.map(c => `<option value="${c}" ${c===exp.category?'selected':''}>${c}</option>`).join('');
+  const methodOpts = appData.paymentMethods.map(m => `<option value="${m}" ${m===exp.payMethod?'selected':''}>${m}</option>`).join('');
   const payOpts = appData.payAccounts.map(p => `<option value="${p}" ${p===exp.payAccount?'selected':''}>${p}</option>`).join('');
   const withdrawOpts = appData.withdrawAccounts.map(a => `<option value="${a}" ${a===exp.withdrawAccount?'selected':''}>${a}</option>`).join('');
 
@@ -323,15 +324,17 @@ window.editExpense = function(id) {
     <div class="form-group"><label>출금일</label><input type="number" id="e-date" class="form-input" value="${exp.date}"></div>
     <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="e-amt" class="form-input" value="${Number(exp.amount).toLocaleString('ko-KR')}"></div>
     <div style="display:flex; gap:10px;">
-      <div class="form-group" style="flex:1;"><label>납부계좌 (카드등)</label><select id="e-payacc" class="form-input">${payOpts}</select></div>
-      <div class="form-group" style="flex:1;"><label>출금계좌 (통장등)</label><select id="e-withacc" class="form-input">${withdrawOpts}</select></div>
+      <div class="form-group" style="flex:1;"><label>납부방법</label><select id="e-paymethod" class="form-input">${methodOpts}</select></div>
+      <div class="form-group" style="flex:1;"><label>납부계좌</label><select id="e-payacc" class="form-input">${payOpts}</select></div>
     </div>
+    <div class="form-group"><label>출금계좌</label><select id="e-withacc" class="form-input">${withdrawOpts}</select></div>
     <button class="pretty-btn gray-btn" style="margin-top:10px; color:#D32F2F;" onclick="deleteExpense(${exp.id})">🗑️ 삭제</button>
   `;
   openModal('지출 수정', html, () => {
     exp.category = document.getElementById('e-cat').value; exp.name = document.getElementById('e-name').value;
     exp.date = document.getElementById('e-date').value; exp.amount = getRawNumber(document.getElementById('e-amt').value);
-    exp.payAccount = document.getElementById('e-payacc').value; exp.withdrawAccount = document.getElementById('e-withacc').value;
+    exp.payMethod = document.getElementById('e-paymethod').value; exp.payAccount = document.getElementById('e-payacc').value; 
+    exp.withdrawAccount = document.getElementById('e-withacc').value;
     saveData(); window.closeModal();
   });
   attachCommaEvent('e-amt'); 
@@ -383,24 +386,27 @@ window.deleteIncome = function(id) { if(confirm('정말 삭제할까요?')) { ap
 fabBtn.addEventListener('click', () => {
   if (currentIndex === 2) {
     const catOpts = appData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    const methodOpts = appData.paymentMethods.map(m => `<option value="${m}">${m}</option>`).join('');
     const payOpts = appData.payAccounts.map(p => `<option value="${p}">${p}</option>`).join('');
     const withdrawOpts = appData.withdrawAccounts.map(a => `<option value="${a}">${a}</option>`).join('');
+    
     const html = `
       <div class="form-group"><label>카테고리</label><select id="e-cat" class="form-input">${catOpts}</select></div>
       <div class="form-group"><label>항목명</label><input type="text" id="e-name" class="form-input" placeholder="예: 월세"></div>
       <div class="form-group"><label>출금일</label><input type="number" id="e-date" class="form-input" placeholder="숫자 (예: 20)"></div>
       <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="e-amt" class="form-input" placeholder="금액 입력"></div>
       <div style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;"><label>납부방법</label><select id="e-paymethod" class="form-input">${methodOpts}</select></div>
         <div class="form-group" style="flex:1;"><label>납부계좌</label><select id="e-payacc" class="form-input">${payOpts}</select></div>
-        <div class="form-group" style="flex:1;"><label>출금계좌</label><select id="e-withacc" class="form-input">${withdrawOpts}</select></div>
       </div>
+      <div class="form-group"><label>출금계좌</label><select id="e-withacc" class="form-input">${withdrawOpts}</select></div>
     `;
     openModal('새 지출 등록', html, () => {
       const rawAmt = getRawNumber(document.getElementById('e-amt').value);
       if (!rawAmt) return alert("금액을 입력해주세요.");
       appData.expenses.push({
         id: Date.now(), category: document.getElementById('e-cat').value, name: document.getElementById('e-name').value, date: document.getElementById('e-date').value,
-        amount: rawAmt, payAccount: document.getElementById('e-payacc').value, withdrawAccount: document.getElementById('e-withacc').value, isPaid: false, paidAt: null
+        amount: rawAmt, payMethod: document.getElementById('e-paymethod').value, payAccount: document.getElementById('e-payacc').value, withdrawAccount: document.getElementById('e-withacc').value, isPaid: false, paidAt: null
       });
       saveData(); window.closeModal();
     });
@@ -519,6 +525,7 @@ window.removeSettingItem = function(arrName, idx) {
   appData[arrName].splice(idx, 1); saveData();
   let t = '관리'; let p = '입력';
   if(arrName === 'categories') { t = '카테고리 관리'; p = '새 카테고리'; }
+  if(arrName === 'paymentMethods') { t = '납부방법 관리'; p = '예: 자동이체'; }
   if(arrName === 'payAccounts') { t = '납부계좌 관리'; p = '예: 삼성카드'; }
   if(arrName === 'withdrawAccounts') { t = '출금계좌 관리'; p = '예: 신한 789'; }
   renderSettingModal(t, arrName, p);
@@ -529,12 +536,14 @@ window.addSettingItem = function(arrName) {
   if(newVal) { appData[arrName].push(newVal); saveData(); }
   let t = '관리'; let p = '입력';
   if(arrName === 'categories') { t = '카테고리 관리'; p = '새 카테고리'; }
+  if(arrName === 'paymentMethods') { t = '납부방법 관리'; p = '예: 자동이체'; }
   if(arrName === 'payAccounts') { t = '납부계좌 관리'; p = '예: 삼성카드'; }
   if(arrName === 'withdrawAccounts') { t = '출금계좌 관리'; p = '예: 신한 789'; }
   renderSettingModal(t, arrName, p);
 };
 
 document.getElementById('btn-manage-categories').addEventListener('click', () => renderSettingModal('카테고리 관리', 'categories', '새 카테고리'));
+document.getElementById('btn-manage-paymethod').addEventListener('click', () => renderSettingModal('납부방법 관리', 'paymentMethods', '예: 자동이체'));
 document.getElementById('btn-manage-pay-account').addEventListener('click', () => renderSettingModal('납부계좌 관리', 'payAccounts', '예: 삼성카드'));
 document.getElementById('btn-manage-withdraw-account').addEventListener('click', () => renderSettingModal('출금계좌 관리', 'withdrawAccounts', '예: 신한 통장'));
 
@@ -546,7 +555,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 
 document.getElementById('btn-reset-data').addEventListener('click', () => {
   openModal('데이터 초기화', `<p style="text-align:center; color:#FF4B4B; font-weight:bold;">정말 모든 데이터를 삭제하시겠습니까?</p>`, async () => {
-      appData = { expenses: [], incomes: [], categories: defaultCategories, payAccounts: defaultPayAccounts, withdrawAccounts: defaultWithdrawAccounts, widgetOrder: [], separateSalary: false };
+      appData = { expenses: [], incomes: [], categories: defaultCategories, paymentMethods: defaultPaymentMethods, payAccounts: defaultPayAccounts, withdrawAccounts: defaultWithdrawAccounts, widgetOrder: [], separateSalary: false };
       await saveData(); window.closeModal(); alert('초기화 완료.'); location.reload();
   });
 });
