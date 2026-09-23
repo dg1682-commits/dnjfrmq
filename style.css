@@ -1,9 +1,5 @@
 :root { --coral-main: #FF8BA7; --bg-color: #F5F7FA; --text-main: #333333; --border-color: #EAECEF; --widget-bg: #fff; }
-
-body.dark-mode {
-  --bg-color: #121212; --text-main: #E0E0E0; --border-color: #333333; --widget-bg: #1E1E1E;
-}
-
+body.dark-mode { --bg-color: #121212; --text-main: #E0E0E0; --border-color: #333333; --widget-bg: #1E1E1E; }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-touch-callout: none; user-select: none; -webkit-tap-highlight-color: transparent; -ms-overflow-style: none; scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
 input, textarea, select { user-select: auto; }
@@ -59,12 +55,10 @@ body.dark-mode .pay-btn.paid { background-color: rgba(76, 175, 80, 0.15); }
 .coral-btn { background-color: var(--coral-main); color: #fff; }
 .gray-btn { background-color: var(--border-color); color: var(--text-main); }
 
-/* 플로팅 버튼 우측 정렬 래퍼 (절대 하단 고정) */
 .fab-wrapper { position: fixed; bottom: 80px; width: 100%; max-width: 430px; left: 50%; transform: translateX(-50%); display: flex; justify-content: flex-end; padding-right: 20px; pointer-events: none; z-index: 200; }
 .fab-btn { pointer-events: auto; width: 56px; height: 56px; background-color: var(--coral-main); color: white; border: none; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 12px rgba(255, 139, 167, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .fab-btn:active { transform: scale(0.95); }
 
-/* 하단 네비게이션 래퍼 내부 고정 (절대 하단 고정) */
 .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; height: 65px; background-color: var(--widget-bg); border-top: 1px solid var(--border-color); display: flex; z-index: 300; padding-bottom: env(safe-area-inset-bottom); }
 .nav-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; color: #C0C0C0; position: relative; cursor: pointer; transition: 0.15s; }
 .nav-item span { font-size: 11px; margin-top: 4px; }
