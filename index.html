@@ -6,6 +6,8 @@
   <title>우리집 가계부</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <!-- 📊 차트 생성을 위한 Chart.js 라이브러리 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   
@@ -79,7 +81,11 @@
 
       <!-- 2. 소득 -->
       <section id="tab-income" class="tab-section">
-        <button class="pretty-btn outline-btn">📷 급여명세서 등록 (준비중)</button>
+        <!-- 카메라/앨범 열기용 숨김 input -->
+        <input type="file" id="ocr-upload" accept="image/*" style="display: none;">
+        <button class="pretty-btn outline-btn" onclick="document.getElementById('ocr-upload').click()">
+          📷 급여명세서 등록 (AI 분석)
+        </button>
         <div class="list-container" id="income-list"></div>
       </section>
 
@@ -90,7 +96,14 @@
 
       <!-- 4. 분석 -->
       <section id="tab-analysis" class="tab-section">
-        <div class="widget"><p style="text-align:center; padding: 40px 0; color: #888;">차트 준비 중</p></div>
+        <div class="widget">
+          <h3 class="widget-title">수입 vs 지출 요약</h3>
+          <canvas id="summaryChart" style="max-height: 200px;"></canvas>
+        </div>
+        <div class="widget">
+          <h3 class="widget-title">카테고리별 지출 비율</h3>
+          <canvas id="expenseChart" style="max-height: 250px;"></canvas>
+        </div>
       </section>
 
       <!-- 5. 설정 -->
@@ -100,10 +113,13 @@
           <span>📂 카테고리 관리</span><span>></span>
         </div>
         <div class="list-item" id="btn-manage-paymethod" style="cursor: pointer;">
-          <span>💳 납부방법 관리</span><span>></span>
+          <span>💳 결제수단 관리 (카드 등)</span><span>></span>
         </div>
-        <div class="list-item" id="btn-manage-account" style="cursor: pointer;">
-          <span>🏦 계좌번호 관리</span><span>></span>
+        <div class="list-item" id="btn-manage-inc-account" style="cursor: pointer;">
+          <span>📥 입금계좌 관리 (수입용)</span><span>></span>
+        </div>
+        <div class="list-item" id="btn-manage-exp-account" style="cursor: pointer;">
+          <span>📤 출금계좌 관리 (지출용)</span><span>></span>
         </div>
 
         <div class="widget-title" style="margin-left: 10px; margin-top: 20px;">계정 관리</div>
@@ -117,6 +133,12 @@
         </div>
       </section>
     </main>
+
+    <!-- OCR 로딩 오버레이 -->
+    <div id="ocr-loading" class="ocr-loading-overlay">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px; font-weight: bold; color: white;">AI가 명세서를 분석하고 있습니다...</p>
+    </div>
 
     <button class="fab-btn" id="btn-floating-add" style="display: none;">+</button>
 
