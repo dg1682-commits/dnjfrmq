@@ -7,17 +7,18 @@
   <link rel="stylesheet" href="style.css">
   <style>
     .login-container { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 30px 20px; text-align: center; }
-    .login-logo { font-size: 28px; font-weight: bold; color: var(--coral-main); margin-bottom: 8px; }
-    .login-desc { font-size: 14px; color: #888; margin-bottom: 40px; }
-    .login-form { width: 100%; background: var(--widget-bg); padding: 24px 20px; border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.02); text-align: left; }
-    .checkbox-group { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: #666; }
+    .login-logo { font-size: 28px; font-weight: 800; color: var(--coral-main); margin-bottom: 8px; }
+    .login-desc { font-size: 14px; color: var(--text-sub); margin-bottom: 36px; }
+    .login-form { width: 100%; background: var(--widget-bg); padding: 24px 20px; border-radius: 20px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); text-align: left; }
+    .checkbox-group { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px; color: var(--text-sub); }
     .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .toggle-text { margin-top: 20px; font-size: 13px; color: #666; cursor: pointer; }
+    .toggle-text { margin-top: 20px; font-size: 13px; color: var(--text-sub); cursor: pointer; }
     .toggle-text b { color: var(--coral-main); }
-    .error-msg { color: #FF4B4B; font-size: 12px; margin-top: 10px; text-align: center; }
+    .error-msg { color: var(--red-main); font-size: 12px; margin-top: 10px; text-align: center; }
   </style>
 </head>
 <body>
+  <script>if(localStorage.getItem('darkMode')==='true') document.body.classList.add('dark-mode');</script>
   <div id="app-wrapper">
     <div class="login-container">
       <div class="login-logo">💰 월급 찍고 갑니다</div>
